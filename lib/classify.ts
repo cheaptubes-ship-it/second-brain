@@ -59,27 +59,22 @@ export async function classifyThought(text: string): Promise<Classification> {
 
   const prompt = `Text: ${JSON.stringify(text)}`
 
-  const res = await client.responses.create({
+  const res = await client.chat.completions.create({
     model: process.env.SB_CLASSIFIER_MODEL || 'gpt-4o-mini',
-    input: [
+    messages: [
       { role: 'system', content: system },
       {
         role: 'user',
-        content: [
-          {
-            type: 'text',
-            text:
-              prompt +
-              '\n\nSchema:\n' +
-              '{filed_to: "people"|"projects"|"ideas"|"admin"|"needs_review", confidence?:0..1, people?:{name,context?,follow_ups?,tags?}, projects?:{name,status?,next_action?,notes?,tags?}, ideas?:{name,one_liner?,notes?,tags?}, admin?:{name,due_date?,status?,notes?}}',
-          },
-        ],
+        content:
+          prompt +
+          '\n\nSchema:\n' +
+          '{filed_to: "people"|"projects"|"ideas"|"admin"|"needs_review", confidence?:0..1, people?:{name,context?,follow_ups?,tags?}, projects?:{name,status?,next_action?,notes?,tags?}, ideas?:{name,one_liner?,notes?,tags?}, admin?:{name,due_date?,status?,notes?}}',
       },
     ],
     response_format: { type: 'json_object' },
   })
 
-  const jsonText = res.output_text
+  const jsonText = res.choices?.[0]?.message?.content ?? ''
   let parsed: unknown
   try {
     parsed = JSON.parse(jsonText)
